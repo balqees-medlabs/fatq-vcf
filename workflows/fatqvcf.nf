@@ -7,6 +7,7 @@ include { QC_ALIGN           } from '../subworkflows/local/qc_align'
 include { PREPARE_INTERVALS  } from '../subworkflows/local/prepare_intervals'
 include { BQSR               } from '../subworkflows/local/bqsr'
 include { GERMLINE_SNV       } from '../subworkflows/local/germline_snv'
+include { MITO               } from '../subworkflows/local/mito'
 include { MULTIQC            } from '../modules/local/multiqc/main'
 
 workflow FATQVCF {
@@ -60,7 +61,30 @@ workflow FATQVCF {
     ch_versions = ch_versions.mix(GERMLINE_SNV.out.versions)
     ch_multiqc  = ch_multiqc.mix(GERMLINE_SNV.out.multiqc)
 
-    // Phase 4: MITO → Phase 5: SV_CNV
+    // ---- Phase 4: mitochondrial calling ------------------------------------------
+    if (!params.skip_mito) {
+        def mt_plain = [
+            file(params.mt_fasta, checkIfExists: true),
+            file("${params.mt_fasta}.fai", checkIfExists: true),
+            file("${params.mt_dir}/Homo_sapiens_assembly38.chrM.dict", checkIfExists: true),
+            file("${params.mt_fasta}.{0123,amb,ann,bwt.2bit.64,pac}", checkIfExists: true) ]
+        def mt_shifted = [
+            file(params.mt_shifted_fasta, checkIfExists: true),
+            file("${params.mt_shifted_fasta}.fai", checkIfExists: true),
+            file("${params.mt_dir}/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.dict", checkIfExists: true),
+            file("${params.mt_shifted_fasta}.{0123,amb,ann,bwt.2bit.64,pac}", checkIfExists: true) ]
+        MITO(
+            ch_analysis_cram, fasta, fai, dict,
+            mt_plain, mt_shifted,
+            file(params.mt_non_control_region,     checkIfExists: true),
+            file(params.mt_control_region_shifted, checkIfExists: true),
+            file(params.mt_shiftback_chain,        checkIfExists: true),
+            file(params.mt_blacklist,              checkIfExists: true) )
+        ch_versions = ch_versions.mix(MITO.out.versions)
+        ch_multiqc  = ch_multiqc.mix(MITO.out.multiqc)
+    }
+
+    // Phase 5: SV_CNV
 
     // ---- Report -----------------------------------------------------------------
     ch_versions_yml = ch_versions.unique().collectFile(name: 'software_versions.yml', sort: true)
