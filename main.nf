@@ -12,6 +12,8 @@ nextflow.enable.dsl = 2
 
 include { FATQVCF            } from './workflows/fatqvcf'
 include { PREPARE_REFERENCES } from './workflows/prepare_references'
+include { VALIDATE           } from './workflows/validate'
+include { PON_BUILD          } from './workflows/pon_build'
 
 workflow {
     if (params.help) {
@@ -20,6 +22,12 @@ workflow {
     }
     if (params.prepare_references) {
         PREPARE_REFERENCES()
+    }
+    else if (params.validate) {
+        VALIDATE()
+    }
+    else if (params.pon_build) {
+        PON_BUILD()
     }
     else {
         if (!params.input) {

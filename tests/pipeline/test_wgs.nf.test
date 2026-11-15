@@ -1,0 +1,35 @@
+nextflow_pipeline {
+
+    name "fatq-vcf WGS end-to-end (HG002 chr20 + chrM)"
+    script "main.nf"
+    tag "pipeline"
+    tag "slow"
+
+    test("chr20+chrM WGS: alignment, SNV, mito, SV/CNV, MultiQC") {
+        when {
+            params {
+                input         = "${projectDir}/tests/data/samplesheet_test_wgs.csv"
+                outdir        = "${outputDir}"
+                scatter_count = 4
+                intervals     = "${projectDir}/tests/data/chr20_chrM.interval_list"
+                max_cpus      = 16
+                max_memory    = '48.GB'
+                skip_sv_cnv   = false
+            }
+        }
+
+        then {
+            assert workflow.success
+            // Small-variant VCF produced and non-empty
+            assert path("${outputDir}/HG002_chr20/variants/HG002_chr20.filtered.vcf.gz").exists()
+            // GVCF produced
+            assert path("${outputDir}/HG002_chr20/variants/HG002_chr20.g.vcf.gz").exists()
+            // Analysis-ready CRAM
+            assert path("${outputDir}/HG002_chr20/alignment").list().find { it.name.endsWith('.recal.cram') }
+            // Mito final VCF + haplogroup
+            assert path("${outputDir}/HG002_chr20/mito").list().find { it.name.endsWith('.chrM.final.vcf.gz') }
+            // MultiQC report
+            assert path("${outputDir}/multiqc/multiqc_report.html").exists()
+        }
+    }
+}

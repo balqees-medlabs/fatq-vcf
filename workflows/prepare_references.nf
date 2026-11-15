@@ -23,6 +23,7 @@ include { GIAB_TEST_SUBSET               } from '../modules/local/references/gia
 include { GIAB_TRUTH_SUBSET              } from '../modules/local/references/giab_truth_subset'
 // Alias so the validation downloads get their own publishDir without colliding with FETCH_URL.
 include { FETCH_URL as FETCH_URL_VALIDATION } from '../modules/local/references/fetch_url'
+include { FETCH_URL as FETCH_URL_BED        } from '../modules/local/references/fetch_url'
 
 workflow PREPARE_REFERENCES {
 
@@ -76,9 +77,14 @@ workflow PREPARE_REFERENCES {
             SAMTOOLS_FAIDX.out.fai,
             GATK4_CREATESEQUENCEDICTIONARY.out.dict
         )
+        // Full benchmark BED fetched on the host (bcftools container has no curl), then filtered.
+        ch_truth_bed = Channel.of(
+            [ [ subdir: 'validation/giab_v4.2.1', name: 'HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed' ],
+              "${GIAB}/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed" ] )
+        FETCH_URL_BED( ch_truth_bed )
         GIAB_TRUTH_SUBSET(
             "${GIAB}/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz",
-            "${GIAB}/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed"
+            FETCH_URL_BED.out.file.map { meta, f -> f }
         )
     }
 

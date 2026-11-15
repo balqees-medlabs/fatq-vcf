@@ -1,0 +1,37 @@
+nextflow_function {
+
+    name "parseSamplesheet"
+    script "lib/samplesheet.nf"
+    function "parseSamplesheet"
+
+    test("parses a valid WGS+WES samplesheet into lane-level meta") {
+        setup {
+            // minimal fastq + bed stand-ins (parse only checks existence)
+            """
+            mkdir -p ${outputDir}/d
+            touch ${outputDir}/d/s1_R1.fq.gz ${outputDir}/d/s1_R2.fq.gz
+            touch ${outputDir}/d/s2_R1.fq.gz ${outputDir}/d/s2_R2.fq.gz
+            touch ${outputDir}/d/kit.bed
+            cat > ${outputDir}/sheet.csv <<CSV
+            sample,lane,fastq_1,fastq_2,seq_type,capture_bed,sex
+            S1,L001,${outputDir}/d/s1_R1.fq.gz,${outputDir}/d/s1_R2.fq.gz,wgs,,female
+            S2,L001,${outputDir}/d/s2_R1.fq.gz,${outputDir}/d/s2_R2.fq.gz,wes,${outputDir}/d/kit.bed,male
+            CSV
+            """.stripIndent()
+        }
+
+        when {
+            function {
+                """
+                input[0] = file("${outputDir}/sheet.csv")
+                """
+            }
+        }
+
+        then {
+            assert function.success
+            // Two lanes parsed
+            assert function.result.size() == 2
+        }
+    }
+}

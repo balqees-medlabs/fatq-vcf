@@ -159,18 +159,20 @@ The goal is to keep all 80 cores busy for the whole run, not to make any one ste
 
 ## 7. Implementation phases
 
-| Phase | Deliverable | Est. |
+| Phase | Deliverable | Status |
 |---|---|---|
-| **0 – Environment** | Add user to `docker` group (`sudo usermod -aG docker labs`, re-login) *or* install Apptainer. Install Java 17 + Nextflow via micromamba (`micromamba create -n nf nextflow openjdk=17 nf-test`). Scaffold nf-core-style repo. | ½ day |
-| **1 – References** | `prepare_references.nf`: download GRCh38 no-alt+decoy, build `.fai/.dict`, bwa-mem2 index, STR table, fetch GATK bundle, chrM resources, HG002 chr20 test subset. | ½ day + ~2 h compute |
-| **2 – QC + alignment** | fastp → bwa-mem3 (`--compat=bwa-mem2`) / bwa-mem2 → samtools streaming → CRAM; `--aligner` switch; lane merge; ALIGN_QC subworkflow; MultiQC. Pass `-profile test` with both aligners. | 1–2 days |
-| **3 – BQSR + germline SNV** | Scatter/gather BQSR; DRAGstr; HC GVCF (DRAGEN mode); GenotypeGVCFs; filtering; bcftools stats. WES interval handling. | 1–2 days |
-| **4 – Mito** | Full GATK mito subworkflow + haplocheck + Haplogrep 3. | 1 day |
-| **5 – SV/CNV** | Manta (wgs/exome), CNVpytor, gCNV case mode + `pon_build` workflow, optional AnnotSV. | 2 days |
-| **6 – Validation + tuning** | HG002 WGS/WES full runs, hap.py / truvari reports, `-with-report` profiling, shard-count and thread tuning, finalize resource configs, measured runtimes in README. | 2–3 days |
-| **7 – Hardening** | nf-test suite, `nextflow_schema.json`, README/usage docs, CHANGELOG, release `v1.0.0`. | 1 day |
+| **0 – Environment** | Docker group fixed; Nextflow 25.x + nf-test + Java 17 in micromamba `nf`; nf-core-style repo scaffolded; `fatqvcf/align` + `fatqvcf/mito` images built. | ✅ done |
+| **1 – References** | `--prepare_references`: GRCh38 no-alt+decoy, `.fai/.dict`, bwa-mem2 index, STR table, GATK bundle, chrM resources, somalier sites, HG002 chr20+chrM test subset + GIAB chr20 truth. | ✅ built (index/STR table generated on node) |
+| **2 – QC + alignment** | fastp → bwa-mem3 (`--compat=bwa-mem2`) / bwa-mem2 → samtools streaming → CRAM; `--aligner` switch; lane merge; QC_ALIGN (mosdepth, stats, VerifyBamID2, somalier, HsMetrics); QC gates; MultiQC. | ✅ code complete |
+| **3 – BQSR + germline SNV** | Shared interval scatter; scatter/gather BQSR; DRAGstr; HC GVCF (DRAGEN mode); GenotypeGVCFs; DRAGEN filter; bcftools stats. | ✅ code complete |
+| **4 – Mito** | GATK shifted-reference mito subworkflow + haplocheck + Haplogrep 3. | ✅ code complete |
+| **5 – SV/CNV** | Manta (wgs/exome), CNVpytor, gCNV case mode + `--pon_build` workflow, optional AnnotSV. | ✅ code complete |
+| **6 – Validation + tuning** | `--validate` (hap.py / truvari); `ALIGNER_CONCORDANCE`; profiling + resource tuning; measured runtimes. | ◑ framework in place; **GIAB runs pending** full reference bundle |
+| **7 – Hardening** | nf-test suite, `nextflow_schema.json`, README/usage docs, CHANGELOG, MIT LICENSE, CLAUDE.md. | ✅ done (release `v1.0.0` after Phase 6 passes) |
 
-Phases 2–5 are independent of each other after Phase 1 and can be developed in parallel branches.
+All code lints clean under the strict parser. **Remaining to call it validated:** run `-profile docker,test`
+(chr20 regression) and the HG002 WGS/WES hap.py/truvari benchmarks once the bwa-mem2 index + STR table
+finish building, record F1/runtimes, then tag `v1.0.0`.
 
 ---
 
