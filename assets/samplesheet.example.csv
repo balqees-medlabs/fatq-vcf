@@ -1,0 +1,4 @@
+sample,lane,fastq_1,fastq_2,seq_type,capture_bed,sex
+HG002_WGS,L001,/data/HG002/HG002_L001_R1.fastq.gz,/data/HG002/HG002_L001_R2.fastq.gz,wgs,,male
+HG002_WGS,L002,/data/HG002/HG002_L002_R1.fastq.gz,/data/HG002/HG002_L002_R2.fastq.gz,wgs,,male
+HG002_WES,L001,/data/HG002_exome/HG002_R1.fastq.gz,/data/HG002_exome/HG002_R2.fastq.gz,wes,/data/kits/twist_exome_2.0.hg38.bed,male

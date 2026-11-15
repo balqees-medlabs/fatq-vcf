@@ -1,0 +1,20 @@
+# Nextflow
+.nextflow*
+work/
+results/
+*.log
+.nf-test/
+.nf-test.log
+
+# Reference data and large files (downloaded by prepare_references)
+references/*
+!references/README.md
+
+# Local overrides
+*.local.config
+nextflow.config.local
+
+# OS / editor
+.DS_Store
+.vscode/
+*.swp
