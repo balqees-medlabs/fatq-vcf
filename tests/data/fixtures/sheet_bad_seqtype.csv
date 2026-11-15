@@ -1,0 +1,2 @@
+sample,lane,fastq_1,fastq_2,seq_type,capture_bed,sex
+S1,L001,s1_R1.fq.gz,s1_R2.fq.gz,rnaseq,,female
