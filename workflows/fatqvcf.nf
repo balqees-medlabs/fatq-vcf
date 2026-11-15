@@ -8,6 +8,7 @@ include { PREPARE_INTERVALS  } from '../subworkflows/local/prepare_intervals'
 include { BQSR               } from '../subworkflows/local/bqsr'
 include { GERMLINE_SNV       } from '../subworkflows/local/germline_snv'
 include { MITO               } from '../subworkflows/local/mito'
+include { SV_CNV             } from '../subworkflows/local/sv_cnv'
 include { MULTIQC            } from '../modules/local/multiqc/main'
 
 workflow FATQVCF {
@@ -84,7 +85,11 @@ workflow FATQVCF {
         ch_multiqc  = ch_multiqc.mix(MITO.out.multiqc)
     }
 
-    // Phase 5: SV_CNV
+    // ---- Phase 5: SV / CNV -------------------------------------------------------
+    if (!params.skip_sv_cnv) {
+        SV_CNV( ch_analysis_cram, GERMLINE_SNV.out.vcf, fasta, fai, dict )
+        ch_versions = ch_versions.mix(SV_CNV.out.versions)
+    }
 
     // ---- Report -----------------------------------------------------------------
     ch_versions_yml = ch_versions.unique().collectFile(name: 'software_versions.yml', sort: true)
