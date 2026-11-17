@@ -27,9 +27,15 @@ workflow SV_CNV {
     ch_versions = ch_versions.mix(MANTA_GERMLINE.out.versions.first())
 
     // ---- WGS: CNVpytor ----------------------------------------------------------
+    // join(remainder:true) yields 5 elems when the SNV VCF exists, 4 (trailing null) when it does
+    // not; index-safe unpacking keeps CNVpytor running (without BAF) in the latter case.
     ch_wgs = ch_cram.filter { meta, cram, crai -> meta.seq_type == 'wgs' }
         .join( ch_snv_vcf, remainder: true )
-        .map { meta, cram, crai, vcf, tbi -> [ meta, cram, crai, vcf ?: [], tbi ?: [] ] }
+        .map { row ->
+            def vcf = row.size() > 3 && row[3] ? row[3] : []
+            def tbi = row.size() > 4 && row[4] ? row[4] : []
+            [ row[0], row[1], row[2], vcf, tbi ]
+        }
     CNVPYTOR( ch_wgs, fasta, fai )
     ch_versions = ch_versions.mix(CNVPYTOR.out.versions.first())
 

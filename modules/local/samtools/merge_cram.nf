@@ -15,7 +15,9 @@ process SAMTOOLS_MERGE_CRAM {
     script:
     def prefix = "${meta.id}"
     """
-    samtools merge -@ ${task.cpus} --reference ${fasta} --write-index \\
+    # CRAM 3.0 (not samtools-1.25 default 3.1): GATK 4.6 htsjdk cannot read CRAM 3.1.
+    samtools merge -@ ${task.cpus} --reference ${fasta} \\
+        --output-fmt cram,version=3.0 --write-index \\
         -o ${prefix}.recal.cram ${crams}
 
     cat <<-END_VERSIONS > versions.yml
