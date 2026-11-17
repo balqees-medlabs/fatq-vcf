@@ -10,6 +10,13 @@ results/
 references/*
 !references/README.md
 
+# Generated regression test data (rebuilt by --prepare_references --test_data).
+# The small GIAB truth VCF/BED and the tiny unit-test fixtures stay tracked.
+tests/data/*.fastq.gz
+tests/data/chr20_chrM.interval_list
+tests/data/samplesheet_test_wgs.csv
+tests/data/subset_stats.txt
+
 # Local overrides
 *.local.config
 nextflow.config.local

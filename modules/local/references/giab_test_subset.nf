@@ -27,11 +27,12 @@ process GIAB_TEST_SUBSET {
     # 1. Stream only chr20 + chrM records (remote .bai fetched automatically by htslib)
     samtools view -@ ${task.cpus} -b -X -o region.bam "${bam_url}" "${bam_url}.bai" chr20 chrM
 
-    # 2. Measure chr20 depth, derive downsample fraction
-    bases=\$(samtools view -c -F 0x904 region.bam chr20 | awk -v l=\$(samtools view region.bam chr20 | head -1000 | awk '{s+=length(\$10)} END{print s/NR}') '{print \$1*l}')
-    depth=\$(awk -v b=\$bases -v L=${chr20_len} 'BEGIN{printf "%.1f", b/L}')
-    frac=\$(awk -v d=\$depth -v t=${target_depth} 'BEGIN{f=t/d; if (f>1) f=1; printf "%.4f", f}')
-    echo -e "chr20_depth_before\t\$depth\ndownsample_fraction\t\$frac" > subset_stats.txt
+    # 2. Measure chr20 depth, derive downsample fraction (guard against zero / SIGPIPE)
+    reads=\$(samtools view -c -F 0x904 region.bam chr20)
+    readlen=\$(samtools view region.bam chr20 | awk 'NR<=1000{s+=length(\$10); n++} NR>1000{exit} END{print (n>0)? int(s/n) : 150}')
+    depth=\$(awk -v r=\$reads -v l=\$readlen -v L=${chr20_len} 'BEGIN{printf "%.1f", (r*l)/L}')
+    frac=\$(awk -v d=\$depth -v t=${target_depth} 'BEGIN{f=(d>0)? t/d : 1; if (f>1) f=1; printf "%.4f", f}')
+    echo -e "chr20_reads\t\$reads\nchr20_mean_read_len\t\$readlen\nchr20_depth_before\t\$depth\ndownsample_fraction\t\$frac" > subset_stats.txt
 
     # 3. Downsample (seed 42), restore name order, write paired FASTQ (drop singletons/supplementary)
     samtools view -@ ${task.cpus} -b -s 42\${frac#0} -F 0x900 region.bam \\
